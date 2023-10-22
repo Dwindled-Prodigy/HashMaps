@@ -1,54 +1,178 @@
 #include <iostream>
 #include <string>
-#include <unordered_map>
+#include <limits>
+using namespace std;
+
+struct KeyValue {
+    string key;
+    int value;
+    KeyValue* next;
+
+    KeyValue(const string& k, int v) : key(k), value(v), next(nullptr) {}
+};
+
+class HashMap {
+private:
+    const int TABLE_SIZE = 1000;
+    KeyValue* table[1000];
+
+public:
+    HashMap() {
+        for (int i = 0; i < TABLE_SIZE; i++) {
+            table[i] = nullptr;
+        }
+    }
+
+    unsigned int hash(const string& key) {
+        unsigned int hash = 0;
+        for (char c : key) {
+            hash = (hash * 31) + c;
+        }
+        return hash % TABLE_SIZE;
+    }
+
+    KeyValue* createKeyValue(const string& key, int value) {
+        return new KeyValue(key, value);
+    }
+
+    void insert(const string& key, int value) {
+        int index = hash(key);
+        KeyValue* newKeyValue = createKeyValue(key, value);
+        newKeyValue->next = table[index];
+        table[index] = newKeyValue;
+    }
+
+    int lookup(const string& key) {
+        int index = hash(key);
+        KeyValue* current = table[index];
+        while (current) {
+            if (current->key == key) {
+                return current->value;
+            }
+            current = current->next;
+        }
+        return -1; // Key not found
+    }
+
+    void deleteKey(const string& key) {
+        int index = hash(key);
+        KeyValue* current = table[index];
+        KeyValue* prev = nullptr;
+
+        while (current) {
+            if (current->key == key) {
+                if (prev == nullptr) {
+                    table[index] = current->next;
+                } else {
+                    prev->next = current->next;
+                }
+                delete current;
+                return;
+            }
+            prev = current;
+            current = current->next;
+        }
+    }
+
+    void displayHashMap() {
+        cout << "Hash Map Contents:" << endl;
+        for (int i = 0; i < TABLE_SIZE; i++) {
+            KeyValue* current = table[i];
+            if (current) {
+                while (current) {
+                    cout << "  Key: " << current->key << ", Value: " << current->value << endl;
+                    current = current->next;
+                }
+            }
+        }
+    }
+
+    void cleanupHashMap() {
+        for (int i = 0; i < TABLE_SIZE; i++) {
+            KeyValue* current = table[i];
+            while (current) {
+                KeyValue* temp = current;
+                current = current->next;
+                delete temp;
+            }
+        }
+    }
+};
 
 int main() {
-    std::unordered_map<std::string, int> hashMap;
-    std::string key;
+    HashMap map;
+    string key;
     int value;
+    int choice;
 
     while (true) {
-        std::cout << "Menu:\n";
-        std::cout << "1. Insert key-value pair\n";
-        std::cout << "2. Look up value by key\n";
-        std::cout << "3. Delete key-value pair\n";
-        std::cout << "4. Quit\n";
-        std::cout << "Enter your choice: ";
+        cout << "Menu:" << endl;
+        cout << "1. Insert key-value pair" << endl;
+        cout << "2. Look up value by key" << endl;
+        cout << "3. Delete key-value pair" << endl;
+        cout << "4. Display the hash map" << endl;
+        cout << "5. Quit" << endl;
+        cout << "Enter your choice: ";
 
-        int choice;
-        std::cin >> choice;
+        if (!(cin >> choice)) {
+            cerr << "Invalid input. Please enter a valid option." << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
 
         switch (choice) {
             case 1:
-                std::cout << "Enter key: ";
-                std::cin >> key;
-                std::cout << "Enter value: ";
-                std::cin >> value;
-                hashMap[key] = value;
+                cout << "Enter key: ";
+                if (!(cin >> key)) {
+                    cerr << "Invalid input. Please enter a valid key." << endl;
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    continue;
+                }
+                cout << "Enter value: ";
+                if (!(cin >> value)) {
+                    cerr << "Invalid input. Please enter a valid value." << endl;
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    continue;
+                }
+                map.insert(key, value);
                 break;
             case 2:
-                std::cout << "Enter key to look up its value: ";
-                std::cin >> key;
-                if (hashMap.find(key) != hashMap.end()) {
-                    std::cout << "Value for key '" << key << "' is " << hashMap[key] << std::endl;
+                cout << "Enter key to look up its value: ";
+                if (!(cin >> key)) {
+                    cerr << "Invalid input. Please enter a valid key." << endl;
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    continue;
+                }
+                value = map.lookup(key);
+                if (value != -1) {
+                    cout << "Value for key '" << key << "' is " << value << endl;
                 } else {
-                    std::cout << "Key '" << key << "' not found in the hash map" << std::endl;
+                    cout << "Key '" << key << "' not found in the hash map" << endl;
                 }
                 break;
             case 3:
-                std::cout << "Enter key to delete: ";
-                std::cin >> key;
-                if (hashMap.find(key) != hashMap.end()) {
-                    hashMap.erase(key);
-                    std::cout << "Key '" << key << "' deleted from the hash map" << std::endl;
-                } else {
-                    std::cout << "Key '" << key << "' not found in the hash map" << std::endl;
+                cout << "Enter key to delete: ";
+                if (!(cin >> key)) {
+                    cerr << "Invalid input. Please enter a valid key." << endl;
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    continue;
                 }
+                map.deleteKey(key);
+                cout << "Key '" << key << "' deleted from the hash map" << endl;
                 break;
             case 4:
+                map.displayHashMap();
+                break;
+            case 5:
+                map.cleanupHashMap();
                 return 0;
             default:
-                std::cout << "Invalid choice. Please select a valid option." << std::endl;
+                cerr << "Invalid choice. Please select a valid option." << endl;
         }
     }
 }
